@@ -1,9 +1,12 @@
 import cli.Argument
 import cli.Mode
+import crypto.AlgorithmSignature
 import crypto.ServiceSignature
 import io.FileManager
 import io.KeyStorage
 import java.security.KeyFactory
+import java.security.PrivateKey
+import java.security.PublicKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 
@@ -44,8 +47,9 @@ class Runner(
         val fileManager = FileManager()
         val algorithm = config.argument
 
-        val privateKey = KeyFactory.getInstance(algorithm.keyAlgorithm)
-            .generatePrivate(PKCS8EncodedKeySpec(fileManager.readFile(privateKeyPath)))
+        val privateKey = fileManager
+            .readFile(privateKeyPath)
+            .toPrivateKey(algorithm)
 
         val signature = ServiceSignature(algorithm)
 
@@ -60,12 +64,25 @@ class Runner(
         val fileManager = FileManager()
         val algorithm = config.argument
 
-        val publicKey = KeyFactory.getInstance(algorithm.keyAlgorithm)
-            .generatePublic(X509EncodedKeySpec(fileManager.readFile(publicKeyPath)))
+        val publicKey = fileManager
+            .readFile(publicKeyPath)
+            .toPublicKey(algorithm)
 
         val data = fileManager.readFile(filePath)
         val signature = fileManager.readFile(signFilePath)
 
         return ServiceSignature(algorithm).verify(data, signature, publicKey)
+    }
+
+    private fun ByteArray.toPrivateKey(algorithm: AlgorithmSignature): PrivateKey {
+        return KeyFactory
+            .getInstance(algorithm.keyAlgorithm)
+            .generatePrivate(PKCS8EncodedKeySpec(this))
+    }
+
+    private fun ByteArray.toPublicKey(algorithm: AlgorithmSignature): PublicKey {
+        return KeyFactory
+            .getInstance(algorithm.keyAlgorithm)
+            .generatePublic(X509EncodedKeySpec(this))
     }
 }

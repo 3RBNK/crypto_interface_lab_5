@@ -50,9 +50,9 @@ object ArgumentParser {
         val pathList = args.drop(2).map { Path.of(it) }
 
         return Argument(
-            mode = mode,
-            argument = argument,
-            pathList = pathList
+            mode,
+            argument,
+            pathList
         )
     }
 }
